@@ -72,7 +72,7 @@ def get_temperature(devicefile):
 
 
 # Main Function
-while true():
+while True:
     # Get list of devices
     devicelist = glob.glob(temprobdir)
 
