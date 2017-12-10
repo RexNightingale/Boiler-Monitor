@@ -3,17 +3,14 @@
 import os
 import datetime
 import glob
-import sqlite3
 import paho.mqtt.client as mqtt
 import RPi.GPIO as GPIO
-from logger import logmessage
 from constants import MQTTBrokerIP
 from constants import MQTTBrokerPort
 
 
 # global variables
 temprobdir = '/sys/bus/w1/devices/28*'
-dbname = 'temperaturelog.db'
 
 
 # GPIO Settings
@@ -53,19 +50,10 @@ def log_status_mqtt(deviceid, status):
     mqttclient.publish("ourHome/boiler/" + deviceid, status)
 
 
-def log_temp_dbase(deviceid, temp):
-    # Log the temperature to the database
-    conn = sqlite3.connect(dbname)
-    curs = conn.cursor()
-    curs.execute("INSERT INTO templog values(datetime('now'), (?) , (?))", (deviceid, temp))
-    conn.commit()
-    conn.close()
-
-
 # get temperature from device
 def get_temperature(devicefile):
     try:
-        fileobj = open(devicefile,'r')
+        fileobj = open(devicefile, 'r')
         lines = fileobj.readlines()
         fileobj.close()
     except:
@@ -96,15 +84,12 @@ def main():
             temperature = get_temperature(id + '/w1_slave')
             if temperature != None:
                 log_temp_mqtt(id[-15:], temperature)
-                #log_temp_dbase(id[-15:], temperature)
             else:
                 temperature = get_temperature(id + '/w1_slave')
                 log_temp_mqtt(id[-15:], temperature)
-                #log_temp_dbase(id[-15:], temperature)
 
     for loop in range(17, 18):
-		    input = str(GPIO.input(loop))
-        #print loop, input
+	input = str(GPIO.input(loop))
         log_status_mqtt(str(loop), input)
 				
     mqttclient.disconnect()
