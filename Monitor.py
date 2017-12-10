@@ -11,7 +11,7 @@ from constants import MQTTBrokerPort
 
 # global variables
 temprobdir = '/sys/bus/w1/devices/28*'
-
+devicelist = glob.glob(temprobdir)                              # Get list of 1-wire devices
 
 # GPIO Settings
 GPIO.setwarnings(False)
@@ -73,9 +73,6 @@ def get_temperature(devicefile):
 
 # Main Function
 while True:
-    # Get list of devices
-    devicelist = glob.glob(temprobdir)
-
     if devicelist == '[]':
         return None
     else:
