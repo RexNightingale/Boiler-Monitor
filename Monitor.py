@@ -21,6 +21,11 @@ GPIO.setup(18, GPIO.IN, pull_up_down = GPIO.PUD_DOWN)           # Set GPIO Pin 1
 GPIO.setup(22, GPIO.OUT)                                        # Set GPIO Pin 22 - Output (Heating On)
 GPIO.setup(23, GPIO.OUT)                                        # Set GPIO Pin 23 - Output (Hotwater On)
 
+# Connect to MQTT Broker
+mqttclient = mqtt.Client()
+mqttclient.connect(MQTTBrokerIP, MQTTBrokerPort)
+mqttclient.loop_start()
+
 
 def on_connect(client, userdata, rc):
     # Do something when connected to MQTT Broker
@@ -30,14 +35,6 @@ def on_connect(client, userdata, rc):
 def on_disconnect(client, userdata, rc):
     # Do something when connected to MQTT Broker
     print('info', 'monitor.py', 'Disconnected from MQTT Broker')
-
-
-# connect to MQTT Broker
-mqttclient = mqtt.Client()
-#mqttclient.on_connect = on_connect
-#mqttclient.on_disconnect = on_disconnect
-mqttclient.connect(MQTTBrokerIP, MQTTBrokerPort)
-mqttclient.loop_start()
 
 
 def log_temp_mqtt(deviceid, temp):
@@ -73,9 +70,7 @@ def get_temperature(devicefile):
 
 # Main Function
 while True:
-    if devicelist == '[]':
-        return None
-    else:
+    if devicelist != '[]':
         for id in devicelist:
             # Get temperature from the each device connected
             temperature = get_temperature(id + '/w1_slave')
@@ -89,4 +84,4 @@ while True:
 	input = str(GPIO.input(loop))
         log_status_mqtt(str(loop), input)
 				
-    mqttclient.disconnect()
+mqttclient.disconnect()
