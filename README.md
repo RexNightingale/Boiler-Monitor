@@ -1,3 +1,4 @@
 # Boiler-Monitor
 
-bla bla bla
+Python Code to monitor boiler environmentals and interface with an MQTT Broker.
+
