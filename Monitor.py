@@ -72,7 +72,7 @@ def get_temperature(devicefile):
 
 
 # Main Function
-def main():
+while true():
     # Get list of devices
     devicelist = glob.glob(temprobdir)
 
@@ -93,5 +93,3 @@ def main():
         log_status_mqtt(str(loop), input)
 				
     mqttclient.disconnect()
-
-if __name__=="__main__": main()
