@@ -107,7 +107,7 @@ def main():
                     temperature = get_temperature(id + '/w1_slave')
                     SendMQTT_TempUpdate(id[-15:], temperature)
         # Read GPIO status indicators
-        for loop in range(17, 18):
+        for loop in range(17, 19):
             SendMQTT_StatusUpdate(loop)
         
         time.sleep(pollcycle - ((time.time() - starttime) % pollcycle)))
