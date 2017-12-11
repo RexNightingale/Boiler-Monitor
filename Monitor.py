@@ -22,10 +22,20 @@ GPIO.setup(18, GPIO.IN, pull_up_down = GPIO.PUD_DOWN)           # Set GPIO Pin 1
 GPIO.setup(22, GPIO.OUT)                                        # Set GPIO Pin 22 - Output (Heating On)
 GPIO.setup(23, GPIO.OUT)                                        # Set GPIO Pin 23 - Output (Hotwater On)
 
-# Connect to MQTT Broker
-mqttclient = mqtt.Client()
-mqttclient.connect(MQTTBrokerIP, MQTTBrokerPort)
-mqttclient.loop_start()
+def connectMQTT():
+    # Connect to the MQTT Broker
+    global mqttclient
+    while True:
+        mqttclient = mqtt.Client()
+        mqttclient.on_connect = on_connect
+        mqttclient.on_disconnect = on_disconnect
+        try:
+            mqttclient.connect(MQTTBrokerIP, MQTTBrokerPort)
+            mqttclient.loop_start()
+            break
+        except:
+            #logmessage('error', 'heatmiser.py', 'Error connecting to the MQTT Broker')
+            time.sleep(30)
 
 
 def on_connect(client, userdata, rc):
@@ -70,7 +80,10 @@ def get_temperature(devicefile):
         return None
 
 
-# Main Function
+# Connect to the MQTT Broker
+connectMQTT()
+
+# Setup GPIO ports for listening to event changes
 GPIO.add_event_detect(17, GPIO.RISING, callback=SendMQTT_StatusUpdate, bouncetime=300) 
 GPIO.add_event_detect(18, GPIO.RISING, callback=SendMQTT_StatusUpdate, bouncetime=300) 
 
