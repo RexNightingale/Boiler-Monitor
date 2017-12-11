@@ -47,7 +47,7 @@ def SendMQTT_StatusUpdate(GPIOport):
     # Send the status of a GPIO port to the MQTT Broker
     status = str(GPIO.input(GPIOport))
     mqttclient.publish("ourHome/boiler/" + str(GPIOport), status)
-
+    GPIO.output(GPIOport+5, status)
 
 # get temperature from device
 def get_temperature(devicefile):
