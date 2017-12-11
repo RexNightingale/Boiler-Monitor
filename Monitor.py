@@ -75,7 +75,7 @@ GPIO.add_event_detect(17, GPIO.RISING, callback=SendMQTT_StatusUpdate, bouncetim
 GPIO.add_event_detect(18, GPIO.RISING, callback=SendMQTT_StatusUpdate, bouncetime=300) 
 
 while True:
-	starttime = time.time()
+    starttime = time.time()
     if devicelist != '[]':
         for id in devicelist:
             # Get temperature from the each device connected
