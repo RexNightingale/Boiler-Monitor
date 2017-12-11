@@ -3,9 +3,9 @@
 import os
 import datetime
 import glob
+import time
 import paho.mqtt.client as mqtt
 import RPi.GPIO as GPIO
-import time
 from logger import logmessage
 from constants import MQTTBrokerIP
 from constants import MQTTBrokerPort
@@ -39,7 +39,7 @@ def connectMQTT():
             time.sleep(30)
 
 
-# Do something when connected to MQTT Broker
+# Connect to MQTT Broker
 def connectSerial():
     # Connect to the Serial interface for the Heatmiser Thermostats
     global s
@@ -56,11 +56,12 @@ def connectSerial():
             logmessage('error', 'heatmiser.py', 'Error connecting with the serial interface: ' + str(msg))
             time.sleep(60)
 
+# Do something when connected to MQTT Broker
 def on_connect(client, userdata, rc):
     logmessage('info', 'monitor.py', 'Connected to MQTT Broker')
 
 
-# Do something when connected to MQTT Broker
+# Do something when disconnected to MQTT Broker
 def on_disconnect(client, userdata, rc):
     logmessage('info', 'monitor.py', 'Disconnected from MQTT Broker')
 
