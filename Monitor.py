@@ -23,8 +23,8 @@ GPIO.setup(18, GPIO.IN, pull_up_down = GPIO.PUD_DOWN)           # Set GPIO Pin 1
 GPIO.setup(22, GPIO.OUT)                                        # Set GPIO Pin 22 - Output (Heating On)
 GPIO.setup(23, GPIO.OUT)                                        # Set GPIO Pin 23 - Output (Hotwater On)
 
+# Connect to the MQTT Broker
 def connectMQTT():
-    # Connect to the MQTT Broker
     global mqttclient
     while True:
         mqttclient = mqtt.Client()
@@ -39,23 +39,23 @@ def connectMQTT():
             time.sleep(30)
 
 
+# Do something when connected to MQTT Broker
 def on_connect(client, userdata, rc):
-    # Do something when connected to MQTT Broker
     logmessage('info', 'monitor.py', 'Connected to MQTT Broker')
 
 
+# Do something when connected to MQTT Broker
 def on_disconnect(client, userdata, rc):
-    # Do something when connected to MQTT Broker
     logmessage('info', 'monitor.py', 'Disconnected from MQTT Broker')
 
 
+# Send the temperature to the MQTT Broker
 def SendMQTT_TempUpdate(deviceid, temp):
-    # Send the temperature to the MQTT Broker
     mqttclient.publish("ourHome/temperatures/" + deviceid, temp)
 
 
+# Send the status of a GPIO port to the MQTT Broker
 def SendMQTT_StatusUpdate(GPIOport):
-    # Send the status of a GPIO port to the MQTT Broker
     status = str(GPIO.input(GPIOport))
     mqttclient.publish("ourHome/boiler/" + str(GPIOport), status)
     # Switch on corresponding status LED
