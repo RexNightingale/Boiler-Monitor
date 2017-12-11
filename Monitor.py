@@ -13,7 +13,7 @@ from constants import MQTTBrokerPort
 
 # global variables
 temprobdir = '/sys/bus/w1/devices/28*'
-devicelist = glob.glob(temprobdir)                              # Get list of 1-wire devices
+pollcycle = 30                                                  # set pollcycle time
 
 # GPIO Settings
 GPIO.setwarnings(False)                                         # Set warnings to false
@@ -94,6 +94,9 @@ def main():
     
     while True:
         starttime = time.time()
+        # Get list of 1-wire devices
+        devicelist = glob.glob(temprobdir)
+        # Read temperature values from 1-wire devices
         if devicelist != '[]':
             for id in devicelist:
                 # Get temperature from the each device connected
@@ -103,6 +106,10 @@ def main():
                 else:
                     temperature = get_temperature(id + '/w1_slave')
                     SendMQTT_TempUpdate(id[-15:], temperature)
-        time.sleep(30.0 - ((time.time() - starttime) % 30.0)))
+        # Read GPIO status indicators
+        for loop in range(17, 18):
+            SendMQTT_StatusUpdate(loop)
+        
+        time.sleep(pollcycle - ((time.time() - starttime) % pollcycle)))
 
 if __name__ == '__main__': main()
