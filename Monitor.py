@@ -25,6 +25,23 @@ GPIO.setup(22, GPIO.OUT)                                        # Set GPIO Pin 2
 GPIO.setup(23, GPIO.OUT)                                        # Set GPIO Pin 23 - Output (Hotwater On)
 
 
+def connectSerial():
+    # Connect to the Serial interface for the Heatmiser Thermostats
+    global s
+    while True:
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.connect((hmSerialIP, hmSerialPort))
+            s.settimeout(hmSerialTimeout)
+            s.setblocking(0)
+            time.sleep(0.5)
+            logmessage('info', 'heatmiser.py', 'Connected to the serial interface')
+            break
+        except socket.error, msg:
+            logmessage('error', 'heatmiser.py', 'Error connecting with the serial interface: ' + str(msg))
+            time.sleep(60)
+
+
 def on_connect(client, userdata, rc):
     # Do something when connected to MQTT Broker
     print('info', 'monitor.py', 'Connected to MQTT Broker')
