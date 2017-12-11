@@ -63,7 +63,7 @@ def SendMQTT_StatusUpdate(GPIOport):
     # GPIO 23 = Water
     GPIO.output(GPIOport + 5, status)
 
-# get temperature from 1-wire device
+# Get temperature from 1-wire device
 def get_temperature(devicefile):
     try:
         fileobj = open(devicefile, 'r')
