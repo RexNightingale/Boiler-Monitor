@@ -81,25 +81,25 @@ def get_temperature(devicefile):
         return None
 
 
-# Connect to the MQTT Broker
-connectMQTT()
-
-# Setup GPIO ports for listening to event changes
-GPIO.add_event_detect(17, GPIO.RISING, callback=SendMQTT_StatusUpdate, bouncetime=300) 
-GPIO.add_event_detect(18, GPIO.RISING, callback=SendMQTT_StatusUpdate, bouncetime=300) 
-
-while True:
-    starttime = time.time()
-    if devicelist != '[]':
-        for id in devicelist:
-            # Get temperature from the each device connected
-            temperature = get_temperature(id + '/w1_slave')
-            if temperature != None:
-                SendMQTT_TempUpdate(id[-15:], temperature)
-            else:
+def main():
+    # Connect to the MQTT Broker
+    connectMQTT()
+    
+    # Setup GPIO ports for listening to event changes
+    GPIO.add_event_detect(17, GPIO.RISING, callback=SendMQTT_StatusUpdate, bouncetime=300) 
+    GPIO.add_event_detect(18, GPIO.RISING, callback=SendMQTT_StatusUpdate, bouncetime=300) 
+    
+    while True:
+        starttime = time.time()
+        if devicelist != '[]':
+            for id in devicelist:
+                # Get temperature from the each device connected
                 temperature = get_temperature(id + '/w1_slave')
-                SendMQTT_TempUpdate(id[-15:], temperature)
-	
-    time.sleep(30.0 - ((time.time() - starttime) % 30.0)))
-			
-mqttclient.disconnect()
+                if temperature != None:
+                    SendMQTT_TempUpdate(id[-15:], temperature)
+                else:
+                    temperature = get_temperature(id + '/w1_slave')
+                    SendMQTT_TempUpdate(id[-15:], temperature)
+        time.sleep(30.0 - ((time.time() - starttime) % 30.0)))
+
+if __name__ == '__main__': main()
