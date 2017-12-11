@@ -6,6 +6,7 @@ import glob
 import paho.mqtt.client as mqtt
 import RPi.GPIO as GPIO
 import time
+from logger import logmessage
 from constants import MQTTBrokerIP
 from constants import MQTTBrokerPort
 
@@ -34,18 +35,18 @@ def connectMQTT():
             mqttclient.loop_start()
             break
         except:
-            #logmessage('error', 'heatmiser.py', 'Error connecting to the MQTT Broker')
+            logmessage('error', 'monitor.py', 'Error connecting to the MQTT Broker')
             time.sleep(30)
 
 
 def on_connect(client, userdata, rc):
     # Do something when connected to MQTT Broker
-    print('info', 'monitor.py', 'Connected to MQTT Broker')
+    logmessage('info', 'monitor.py', 'Connected to MQTT Broker')
 
 
 def on_disconnect(client, userdata, rc):
     # Do something when connected to MQTT Broker
-    print('info', 'monitor.py', 'Disconnected from MQTT Broker')
+    logmessage('info', 'monitor.py', 'Disconnected from MQTT Broker')
 
 
 def SendMQTT_TempUpdate(deviceid, temp):
