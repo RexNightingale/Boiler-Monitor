@@ -111,7 +111,7 @@ def main():
         for loop in range(17, 19):
             SendMQTT_StatusUpdate(loop)
         
-        time.sleep(pollcycle - ((time.time() - starttime) % pollcycle)))
+        time.sleep(pollcycle - ((time.time() - starttime) % pollcycle))
 
 mqttclient.disconnect()
 
