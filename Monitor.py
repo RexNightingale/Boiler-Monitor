@@ -3,9 +3,9 @@
 import os
 import datetime
 import glob
-import time
 import paho.mqtt.client as mqtt
 import RPi.GPIO as GPIO
+import time
 from logger import logmessage
 from constants import MQTTBrokerIP
 from constants import MQTTBrokerPort
@@ -13,18 +13,33 @@ from constants import MQTTBrokerPort
 
 # global variables
 temprobdir = '/sys/bus/w1/devices/28*'
-dbname = 'temperaturelog.db'
-
+pollcycle = 30                                                  # set pollcycle time
 
 # GPIO Settings
-GPIO.setwarnings(False)
+GPIO.setwarnings(False)                                         # Set warnings to false
 GPIO.setmode(GPIO.BCM)                                          # Set GPIO Numbering to match Pinnout
 GPIO.setup(17, GPIO.IN, pull_up_down = GPIO.PUD_DOWN)           # Set GPIO Pin 17 - Input (Heating On)
 GPIO.setup(18, GPIO.IN, pull_up_down = GPIO.PUD_DOWN)           # Set GPIO Pin 18 - Input (Hotwater On)
 GPIO.setup(22, GPIO.OUT)                                        # Set GPIO Pin 22 - Output (Heating On)
 GPIO.setup(23, GPIO.OUT)                                        # Set GPIO Pin 23 - Output (Hotwater On)
 
+# Connect to the MQTT Broker
+def connectMQTT():
+    global mqttclient
+    while True:
+        mqttclient = mqtt.Client()
+        mqttclient.on_connect = on_connect
+        mqttclient.on_disconnect = on_disconnect
+        try:
+            mqttclient.connect(MQTTBrokerIP, MQTTBrokerPort)
+            mqttclient.loop_start()
+            break
+        except:
+            logmessage('error', 'monitor.py', 'Error connecting to the MQTT Broker')
+            time.sleep(30)
 
+
+# Do something when connected to MQTT Broker
 def connectSerial():
     # Connect to the Serial interface for the Heatmiser Thermostats
     global s
@@ -41,48 +56,34 @@ def connectSerial():
             logmessage('error', 'heatmiser.py', 'Error connecting with the serial interface: ' + str(msg))
             time.sleep(60)
 
-
 def on_connect(client, userdata, rc):
-    # Do something when connected to MQTT Broker
-    print('info', 'monitor.py', 'Connected to MQTT Broker')
+    logmessage('info', 'monitor.py', 'Connected to MQTT Broker')
 
 
+# Do something when connected to MQTT Broker
 def on_disconnect(client, userdata, rc):
-    # Do something when connected to MQTT Broker
-    print('info', 'monitor.py', 'Disconnected from MQTT Broker')
+    logmessage('info', 'monitor.py', 'Disconnected from MQTT Broker')
 
 
-# connect to MQTT Broker
-mqttclient = mqtt.Client()
-#mqttclient.on_connect = on_connect
-#mqttclient.on_disconnect = on_disconnect
-mqttclient.connect(MQTTBrokerIP, MQTTBrokerPort)
-mqttclient.loop_start()
-
-
-def log_temp_mqtt(deviceid, temp):
-    # Send the temperature to the MQTT Broker
+# Send the temperature to the MQTT Broker
+def SendMQTT_TempUpdate(deviceid, temp):
     mqttclient.publish("ourHome/temperatures/" + deviceid, temp)
 
 
-def log_status_mqtt(deviceid, status):
-    # Send the temperature to the MQTT Broker
-    mqttclient.publish("ourHome/boiler/" + deviceid, status)
+# Send the status of a GPIO port to the MQTT Broker
+def SendMQTT_StatusUpdate(GPIOport):
+    status = GPIO.input(GPIOport)
+    mqttclient.publish("ourHome/boiler/" + str(GPIOport), str(status))
+    # Switch on corresponding status LED
+    # GPIO 22 = Heating
+    # GPIO 23 = Water
+    GPIO.output(GPIOport + 5, status)
 
 
-def log_temp_dbase(deviceid, temp):
-    # Log the temperature to the database
-    conn = sqlite3.connect(dbname)
-    curs = conn.cursor()
-    curs.execute("INSERT INTO templog values(datetime('now'), (?) , (?))", (deviceid, temp))
-    conn.commit()
-    conn.close()
-
-
-# get temperature from device
+# Get temperature from 1-wire device
 def get_temperature(devicefile):
     try:
-        fileobj = open(devicefile,'r')
+        fileobj = open(devicefile, 'r')
         lines = fileobj.readlines()
         fileobj.close()
     except:
@@ -100,30 +101,34 @@ def get_temperature(devicefile):
         return None
 
 
-# Main Function
 def main():
-    # Get list of devices
-    devicelist = glob.glob(temprobdir)
-
-    if devicelist == '[]':
-        return None
-    else:
-        for id in devicelist:
-            # Get temperature from the each device connected
-            temperature = get_temperature(id + '/w1_slave')
-            if temperature != None:
-                log_temp_mqtt(id[-15:], temperature)
-                #log_temp_dbase(id[-15:], temperature)
-            else:
+    # Connect to the MQTT Broker
+    connectMQTT()
+    
+    # Setup GPIO ports for listening to event changes
+    GPIO.add_event_detect(17, GPIO.RISING, callback=SendMQTT_StatusUpdate, bouncetime=300) 
+    GPIO.add_event_detect(18, GPIO.RISING, callback=SendMQTT_StatusUpdate, bouncetime=300) 
+    
+    while True:
+        starttime = time.time()
+        # Get list of 1-wire devices
+        devicelist = glob.glob(temprobdir)
+        # Read temperature values from 1-wire devices
+        if devicelist != '[]':
+            for id in devicelist:
+                # Get temperature from the each device connected
                 temperature = get_temperature(id + '/w1_slave')
-                log_temp_mqtt(id[-15:], temperature)
-                #log_temp_dbase(id[-15:], temperature)
+                if temperature != None:
+                    SendMQTT_TempUpdate(id[-15:], temperature)
+                else:
+                    temperature = get_temperature(id + '/w1_slave')
+                    SendMQTT_TempUpdate(id[-15:], temperature)
+        # Read GPIO status indicators
+        for loop in range(17, 19):
+            SendMQTT_StatusUpdate(loop)
+        
+        time.sleep(pollcycle - ((time.time() - starttime) % pollcycle))
 
-    for loop in range(17, 18):
-		    input = str(GPIO.input(loop))
-        #print loop, input
-        log_status_mqtt(str(loop), input)
-				
-    mqttclient.disconnect()
+mqttclient.disconnect()
 
-if __name__=="__main__": main()
+if __name__ == '__main__': main()
