@@ -5,6 +5,7 @@ import datetime
 import glob
 import paho.mqtt.client as mqtt
 import RPi.GPIO as GPIO
+import time
 from constants import MQTTBrokerIP
 from constants import MQTTBrokerPort
 
@@ -37,14 +38,15 @@ def on_disconnect(client, userdata, rc):
     print('info', 'monitor.py', 'Disconnected from MQTT Broker')
 
 
-def log_temp_mqtt(deviceid, temp):
+def SendMQTT_TempUpdate(deviceid, temp):
     # Send the temperature to the MQTT Broker
     mqttclient.publish("ourHome/temperatures/" + deviceid, temp)
 
 
-def log_status_mqtt(deviceid, status):
-    # Send the temperature to the MQTT Broker
-    mqttclient.publish("ourHome/boiler/" + deviceid, status)
+def SendMQTT_StatusUpdate(GPIOport):
+	# Send the status of a GPIO port to the MQTT Broker
+	status = str(GPIO.input(GPIOport))
+	mqttclient.publish("ourHome/boiler/" + str(GPIOport), status)
 
 
 # get temperature from device
@@ -69,19 +71,21 @@ def get_temperature(devicefile):
 
 
 # Main Function
+GPIO.add_event_detect(17, GPIO.RISING, callback=SendMQTT_StatusUpdate, bouncetime=300) 
+GPIO.add_event_detect(18, GPIO.RISING, callback=SendMQTT_StatusUpdate, bouncetime=300) 
+
 while True:
+	starttime = time.time()
     if devicelist != '[]':
         for id in devicelist:
             # Get temperature from the each device connected
             temperature = get_temperature(id + '/w1_slave')
             if temperature != None:
-                log_temp_mqtt(id[-15:], temperature)
+                SendMQTT_TempUpdate(id[-15:], temperature)
             else:
                 temperature = get_temperature(id + '/w1_slave')
-                log_temp_mqtt(id[-15:], temperature)
-
-    for loop in range(17, 18):
-	input = str(GPIO.input(loop))
-        log_status_mqtt(str(loop), input)
+                SendMQTT_TempUpdate(id[-15:], temperature)
+				
+	time.sleep(60.0 - ((time.time() - starttime) % 60.0)))
 				
 mqttclient.disconnect()
