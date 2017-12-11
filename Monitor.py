@@ -15,7 +15,7 @@ temprobdir = '/sys/bus/w1/devices/28*'
 devicelist = glob.glob(temprobdir)                              # Get list of 1-wire devices
 
 # GPIO Settings
-GPIO.setwarnings(False)
+GPIO.setwarnings(False)                                         # Set warnings to false
 GPIO.setmode(GPIO.BCM)                                          # Set GPIO Numbering to match Pinnout
 GPIO.setup(17, GPIO.IN, pull_up_down = GPIO.PUD_DOWN)           # Set GPIO Pin 17 - Input (Heating On)
 GPIO.setup(18, GPIO.IN, pull_up_down = GPIO.PUD_DOWN)           # Set GPIO Pin 18 - Input (Hotwater On)
@@ -85,7 +85,7 @@ while True:
             else:
                 temperature = get_temperature(id + '/w1_slave')
                 SendMQTT_TempUpdate(id[-15:], temperature)
-				
-	time.sleep(60.0 - ((time.time() - starttime) % 60.0)))
-				
+	
+    time.sleep(30.0 - ((time.time() - starttime) % 30.0)))
+			
 mqttclient.disconnect()
