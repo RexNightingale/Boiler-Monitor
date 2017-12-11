@@ -112,4 +112,6 @@ def main():
         
         time.sleep(pollcycle - ((time.time() - starttime) % pollcycle)))
 
+mqttclient.disconnect()
+
 if __name__ == '__main__': main()
